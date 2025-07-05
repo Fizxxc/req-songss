@@ -5,32 +5,45 @@
   <title>Konfirmasi Pembayaran | XO Music</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background: linear-gradient(135deg, #111827, #1f2937);
+    }
+  </style>
 </head>
-<body class="bg-gray-900 text-white min-h-screen flex items-center justify-center px-4">
-  <div class="bg-white bg-opacity-10 p-8 rounded-xl backdrop-blur-xl max-w-lg w-full text-center">
-    <h1 class="text-2xl font-bold mb-4">✅ Konfirmasi Pembayaran</h1>
-    <p class="mb-4 text-sm text-gray-300">Silakan bayar terlebih dahulu melalui QR/Saweria berikut:</p>
-    <img src="qris_qr.png" alt="QR Pembayaran" class="mx-auto w-40 h-40 rounded-lg shadow mb-4" />
-    <input type="text" id="nama" placeholder="Nama kamu (opsional)" class="w-full p-2 rounded text-black mb-4" />
-    <button id="kirimBtn" class="bg-yellow-400 hover:bg-yellow-500 px-4 py-2 rounded text-black font-bold w-full">Sudah Bayar & Kirim Request</button>
-    <div id="status" class="mt-4 text-sm"></div>
+<body class="text-white min-h-screen flex items-center justify-center px-4">
+  <div class="bg-white bg-opacity-10 p-8 rounded-xl backdrop-blur-xl max-w-lg w-full text-center shadow-2xl">
+    <h1 class="text-3xl font-extrabold mb-4 tracking-tight">✅ Konfirmasi Pembayaran</h1>
+    <p class="mb-4 text-sm text-gray-300">Silakan lakukan pembayaran via QRIS / Saweria di bawah ini sebelum mengirim request.</p>
+    
+    <img src="qris_qr.png" alt="QR Pembayaran" class="mx-auto w-40 h-40 rounded-lg shadow mb-4 border-2 border-white border-opacity-30" />
+
+    <input type="text" id="nama" placeholder="Nama kamu (opsional)" class="w-full p-3 rounded text-black mb-4" />
+
+    <button id="kirimBtn" class="bg-yellow-400 hover:bg-yellow-500 px-4 py-2 rounded font-bold text-black w-full transition-all">Sudah Bayar & Kirim Request</button>
+    
+    <div id="status" class="mt-4 text-sm text-center"></div>
   </div>
 
   <script>
-    const dataRaw = sessionStorage.getItem("request");
+    const kirimBtn = document.getElementById("kirimBtn");
+    const statusBox = document.getElementById("status");
+
     let data;
     try {
-      data = JSON.parse(dataRaw);
-    } catch {
-      document.getElementById("status").textContent = "Gagal membaca data lagu.";
-      document.getElementById("kirimBtn").disabled = true;
+      const raw = sessionStorage.getItem("request");
+      data = JSON.parse(raw);
+      if (!data || !data.title || !data.artist) throw new Error("Data tidak lengkap.");
+    } catch (err) {
+      statusBox.innerHTML = `<span class="text-red-400">❌ Gagal membaca data lagu. Silakan kembali ke halaman utama.</span>`;
+      kirimBtn.disabled = true;
     }
 
-    document.getElementById("kirimBtn").addEventListener("click", async () => {
-      const statusBox = document.getElementById("status");
+    kirimBtn.addEventListener("click", async () => {
       const nama = document.getElementById("nama").value || "Anonim";
+      statusBox.innerHTML = `<span class="text-yellow-300 animate-pulse">⏳ Mengirim request ke admin...</span>`;
+      kirimBtn.disabled = true;
 
-      statusBox.textContent = "Mengirim...";
       try {
         const res = await fetch("/api/request", {
           method: "POST",
@@ -39,14 +52,17 @@
         });
 
         const result = await res.json();
-        if (result.success) {
-          statusBox.innerHTML = `<span class="text-green-400">✅ Berhasil dikirim ke admin. Tunggu lagumu diputar!</span>`;
+
+        if (res.ok && result.success) {
+          statusBox.innerHTML = `<span class="text-green-400">✅ Berhasil! Tunggu lagumu diputar 🎶</span>`;
         } else {
-          statusBox.innerHTML = `<span class="text-red-400">❌ Gagal kirim: ${result.error}</span>`;
+          statusBox.innerHTML = `<span class="text-red-400">❌ Gagal mengirim request. ${result.error || "Coba lagi nanti."}</span>`;
         }
-      } catch (e) {
-        statusBox.innerHTML = `<span class="text-red-400">🚫 Error koneksi ke server.</span>`;
+      } catch (err) {
+        statusBox.innerHTML = `<span class="text-red-400">🚫 Gagal konek ke server. Pastikan koneksi stabil.</span>`;
       }
+
+      kirimBtn.disabled = false;
     });
   </script>
 </body>
