@@ -2,82 +2,52 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
-  <title>Terima Kasih | XO Music</title>
+  <title>Konfirmasi Pembayaran | XO Music</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    body {
-      background: url('https://images.unsplash.com/photo-1509223197845-458d87318791?auto=format&fit=crop&w=1950&q=80') no-repeat center center fixed;
-      background-size: cover;
-    }
-    .glass {
-      backdrop-filter: blur(20px) saturate(160%);
-      -webkit-backdrop-filter: blur(20px) saturate(160%);
-      background-color: rgba(17, 25, 40, 0.6);
-      border-radius: 16px;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-    }
-  </style>
 </head>
-<body class="text-white min-h-screen flex items-center justify-center px-4">
-  <div class="glass max-w-md w-full p-8 text-center">
-    <h1 class="text-3xl font-bold mb-4">🎧 Terima Kasih!</h1>
-    <p class="mb-6 text-sm text-gray-200">Silakan masukkan nama kamu lalu klik "Kirim Request". Setelah itu request lagu kamu akan masuk antrian.</p>
-    
-    <input type="text" id="nama" placeholder="Nama kamu (opsional)" class="w-full p-3 mb-4 rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-yellow-400" />
-    
-    <button id="kirimBtn" class="w-full bg-yellow-400 hover:bg-yellow-500 text-black font-semibold px-4 py-2 rounded-lg transition-all">Kirim Request</button>
-
-    <div id="status" class="mt-4 text-sm text-center"></div>
-
-    <p class="text-xs text-gray-400 mt-6">XO Music 2025</p>
+<body class="bg-gray-900 text-white min-h-screen flex items-center justify-center px-4">
+  <div class="bg-white bg-opacity-10 p-8 rounded-xl backdrop-blur-xl max-w-lg w-full text-center">
+    <h1 class="text-2xl font-bold mb-4">✅ Konfirmasi Pembayaran</h1>
+    <p class="mb-4 text-sm text-gray-300">Silakan bayar terlebih dahulu melalui QR/Saweria berikut:</p>
+    <img src="qris_qr.png" alt="QR Pembayaran" class="mx-auto w-40 h-40 rounded-lg shadow mb-4" />
+    <input type="text" id="nama" placeholder="Nama kamu (opsional)" class="w-full p-2 rounded text-black mb-4" />
+    <button id="kirimBtn" class="bg-yellow-400 hover:bg-yellow-500 px-4 py-2 rounded text-black font-bold w-full">Sudah Bayar & Kirim Request</button>
+    <div id="status" class="mt-4 text-sm"></div>
   </div>
-<script>
-  let data;
-  const statusBox = document.getElementById("status");
-  const kirimBtn = document.getElementById("kirimBtn");
 
-  try {
-    const raw = sessionStorage.getItem("request");
-    if (!raw) throw new Error("Data kosong");
-    data = JSON.parse(raw);
-  } catch (e) {
-    statusBox.innerHTML = `<span class='text-red-400'>🚫 Data request tidak ditemukan. Silakan ulangi dari halaman awal.</span>`;
-    kirimBtn.disabled = true;
-  }
-
-  const namaInput = document.getElementById("nama");
-
-  kirimBtn.addEventListener("click", async () => {
-    if (!data) return;
-
-    kirimBtn.disabled = true;
-    statusBox.innerHTML = "<span class='text-yellow-300'>⏳ Mengirim request...</span>";
-
+  <script>
+    const dataRaw = sessionStorage.getItem("request");
+    let data;
     try {
-      const res = await fetch("/api/request", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: data.title,
-          artist: data.artist,
-          nama: namaInput.value.trim() || "Anonim"
-        })
-      });
-
-      const result = await res.json();
-
-      if (result.success) {
-        statusBox.innerHTML = "<span class='text-green-400'>✅ Request kamu berhasil dikirim!</span>";
-      } else {
-        statusBox.innerHTML = "<span class='text-red-400'>❌ Gagal mengirim request.</span>";
-      }
-
-    } catch (e) {
-      console.error(e);
-      statusBox.innerHTML = "<span class='text-red-400'>🚫 Error saat mengirim data.</span>";
+      data = JSON.parse(dataRaw);
+    } catch {
+      document.getElementById("status").textContent = "Gagal membaca data lagu.";
+      document.getElementById("kirimBtn").disabled = true;
     }
-  });
-</script>
+
+    document.getElementById("kirimBtn").addEventListener("click", async () => {
+      const statusBox = document.getElementById("status");
+      const nama = document.getElementById("nama").value || "Anonim";
+
+      statusBox.textContent = "Mengirim...";
+      try {
+        const res = await fetch("/api/request", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...data, nama })
+        });
+
+        const result = await res.json();
+        if (result.success) {
+          statusBox.innerHTML = `<span class="text-green-400">✅ Berhasil dikirim ke admin. Tunggu lagumu diputar!</span>`;
+        } else {
+          statusBox.innerHTML = `<span class="text-red-400">❌ Gagal kirim: ${result.error}</span>`;
+        }
+      } catch (e) {
+        statusBox.innerHTML = `<span class="text-red-400">🚫 Error koneksi ke server.</span>`;
+      }
+    });
+  </script>
 </body>
 </html>

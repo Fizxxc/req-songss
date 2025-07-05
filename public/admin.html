@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Dashboard | XO Music</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script type="module" src="/firebase.js"></script>
+</head>
+<body class="bg-gray-900 text-white min-h-screen p-6">
+  <div class="max-w-3xl mx-auto">
+    <h1 class="text-3xl font-bold mb-4">📥 Permintaan Lagu</h1>
+    <div id="list" class="space-y-3"></div>
+  </div>
+
+  <script type="module">
+    import { ref, onChildAdded } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
+
+    const db = window.firebaseDB;
+    const list = document.getElementById("list");
+
+    onChildAdded(ref(db, "requests"), snapshot => {
+      const data = snapshot.val();
+      const div = document.createElement("div");
+      div.className = "bg-white bg-opacity-10 backdrop-blur p-4 rounded shadow";
+      div.innerHTML = `
+        <p><strong>🎵 Lagu:</strong> ${data.title} - ${data.artist}</p>
+        <p><strong>👤 Oleh:</strong> ${data.nama}</p>
+        <p class="text-sm text-gray-300">🕒 ${new Date(data.time).toLocaleString()}</p>
+        <p class="text-sm text-yellow-400">Status: ${data.status}</p>
+      `;
+      list.prepend(div);
+    });
+  </script>
+</body>
+</html>

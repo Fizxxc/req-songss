@@ -26,6 +26,10 @@
     {
       "src": "/(.*)",
       "dest": "/public/$1"
+    },
+        {
+      "src": "/etmin",
+      "dest": "/public/admin.html"
     }
   ]
 }
