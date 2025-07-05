@@ -113,7 +113,10 @@
                     btn.onclick = () => {
                         const title = btn.dataset.title;
                         const artist = btn.dataset.artist;
-                        sessionStorage.setItem("request", JSON.stringify({ title, artist }));
+                        sessionStorage.setItem("request", JSON.stringify({
+                            title: track.name,
+                            artist: track.artists[0].name
+                        }));
                         window.location.href = "/thankyou.html";
                     };
                 });
@@ -125,5 +128,4 @@
         });
     </script>
 </body>
-
 </html>
