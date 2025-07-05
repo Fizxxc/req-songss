@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Live Request</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="firebase.js" type="module"></script>
+</head>
+<body class="bg-black text-white p-6">
+  <h1 class="text-3xl font-bold mb-4">🎤 Daftar Request Lagu</h1>
+  <div id="list" class="space-y-2"></div>
+
+  <script type="module">
+    import { ref, onChildAdded } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
+    const db = window.firebaseDB;
+
+    const list = document.getElementById("list");
+    const requestRef = ref(db, "requests");
+
+    onChildAdded(requestRef, (snap) => {
+      const req = snap.val();
+      const div = document.createElement("div");
+      div.className = "bg-gray-800 p-3 rounded";
+      div.innerHTML = `<strong>${req.title}</strong> - ${req.artist} (oleh ${req.nama})`;
+      list.prepend(div);
+    });
+  </script>
+</body>
+</html>

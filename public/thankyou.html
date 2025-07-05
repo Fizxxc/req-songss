@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <title>Pembayaran Lagu</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white p-6 text-center">
+  <h1 class="text-2xl font-bold mb-4">🧾 Bayar untuk Request</h1>
+  <p class="mb-4">Transfer minimal Rp1.000 ke Saweria untuk mengaktifkan request:</p>
+  <img src="Screenshot 2025-07-05 at 19-44-35 Overlays Saweria.png" alt="Saweria QR" class="mx-auto w-64" />
+  <p class="mt-2 text-sm">Atas nama: <strong>@your_saweria</strong></p>
+
+  <input type="text" id="nama" placeholder="Nama Anda (untuk verifikasi)" class="mt-4 p-2 text-black w-full max-w-sm" />
+  <button id="submit" class="mt-4 bg-green-500 px-4 py-2 rounded">Saya Sudah Bayar</button>
+
+  <script>
+    document.getElementById('submit').onclick = async () => {
+      const data = JSON.parse(sessionStorage.getItem("request"));
+      const nama = document.getElementById("nama").value || "Anonim";
+      const res = await fetch("/api/request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...data, nama })
+      });
+      if (res.ok) {
+        alert("Request Anda berhasil masuk antrian 🎵");
+        window.location.href = "/live.html";
+      }
+    };
+  </script>
+</body>
+</html>
