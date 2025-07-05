@@ -32,46 +32,52 @@
 
     <p class="text-xs text-gray-400 mt-6">XO Music 2025</p>
   </div>
+<script>
+  let data;
+  const statusBox = document.getElementById("status");
+  const kirimBtn = document.getElementById("kirimBtn");
 
-  <script>
-    const data = JSON.parse(sessionStorage.getItem("request"));
-    const namaInput = document.getElementById("nama");
-    const kirimBtn = document.getElementById("kirimBtn");
-    const statusBox = document.getElementById("status");
+  try {
+    const raw = sessionStorage.getItem("request");
+    if (!raw) throw new Error("Data kosong");
+    data = JSON.parse(raw);
+  } catch (e) {
+    statusBox.innerHTML = `<span class='text-red-400'>🚫 Data request tidak ditemukan. Silakan ulangi dari halaman awal.</span>`;
+    kirimBtn.disabled = true;
+  }
 
-    if (!data || !data.title || !data.artist) {
-      statusBox.innerHTML = "<span class='text-red-400'>Data tidak ditemukan. Silakan ulangi dari halaman awal.</span>";
-      kirimBtn.disabled = true;
-    }
+  const namaInput = document.getElementById("nama");
 
-    kirimBtn.addEventListener("click", async () => {
-      kirimBtn.disabled = true;
-      statusBox.innerHTML = "<span class='text-yellow-300'>⏳ Mengirim request...</span>";
+  kirimBtn.addEventListener("click", async () => {
+    if (!data) return;
 
-      try {
-        const res = await fetch("/api/request", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            title: data.title,
-            artist: data.artist,
-            nama: namaInput.value.trim() || "Anonim"
-          })
-        });
+    kirimBtn.disabled = true;
+    statusBox.innerHTML = "<span class='text-yellow-300'>⏳ Mengirim request...</span>";
 
-        const result = await res.json();
+    try {
+      const res = await fetch("/api/request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: data.title,
+          artist: data.artist,
+          nama: namaInput.value.trim() || "Anonim"
+        })
+      });
 
-        if (result.success) {
-          statusBox.innerHTML = "<span class='text-green-400'>✅ Request kamu berhasil dikirim!</span>";
-        } else {
-          statusBox.innerHTML = "<span class='text-red-400'>❌ Gagal mengirim request.</span>";
-        }
+      const result = await res.json();
 
-      } catch (e) {
-        console.error(e);
-        statusBox.innerHTML = "<span class='text-red-400'>🚫 Error saat mengirim data.</span>";
+      if (result.success) {
+        statusBox.innerHTML = "<span class='text-green-400'>✅ Request kamu berhasil dikirim!</span>";
+      } else {
+        statusBox.innerHTML = "<span class='text-red-400'>❌ Gagal mengirim request.</span>";
       }
-    });
-  </script>
+
+    } catch (e) {
+      console.error(e);
+      statusBox.innerHTML = "<span class='text-red-400'>🚫 Error saat mengirim data.</span>";
+    }
+  });
+</script>
 </body>
 </html>
