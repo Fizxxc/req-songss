@@ -2,32 +2,76 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
-  <title>Pembayaran Lagu</title>
+  <title>Terima Kasih | XO Music</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background: url('https://images.unsplash.com/photo-1509223197845-458d87318791?auto=format&fit=crop&w=1950&q=80') no-repeat center center fixed;
+      background-size: cover;
+    }
+    .glass {
+      backdrop-filter: blur(20px) saturate(160%);
+      -webkit-backdrop-filter: blur(20px) saturate(160%);
+      background-color: rgba(17, 25, 40, 0.6);
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+  </style>
 </head>
-<body class="bg-gray-900 text-white p-6 text-center">
-  <h1 class="text-2xl font-bold mb-4">🧾 Bayar untuk Request</h1>
-  <p class="mb-4">Transfer minimal Rp1.000 ke Saweria untuk mengaktifkan request:</p>
-  <img src="Screenshot 2025-07-05 at 19-44-35 Overlays Saweria.png" alt="Saweria QR" class="mx-auto w-64" />
-  <p class="mt-2 text-sm">Atas nama: <strong>@your_saweria</strong></p>
+<body class="text-white min-h-screen flex items-center justify-center px-4">
+  <div class="glass max-w-md w-full p-8 text-center">
+    <h1 class="text-3xl font-bold mb-4">🎧 Terima Kasih!</h1>
+    <p class="mb-6 text-sm text-gray-200">Silakan masukkan nama kamu lalu klik "Kirim Request". Setelah itu request lagu kamu akan masuk antrian.</p>
+    
+    <input type="text" id="nama" placeholder="Nama kamu (opsional)" class="w-full p-3 mb-4 rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-yellow-400" />
+    
+    <button id="kirimBtn" class="w-full bg-yellow-400 hover:bg-yellow-500 text-black font-semibold px-4 py-2 rounded-lg transition-all">Kirim Request</button>
 
-  <input type="text" id="nama" placeholder="Nama Anda (untuk verifikasi)" class="mt-4 p-2 text-black w-full max-w-sm" />
-  <button id="submit" class="mt-4 bg-green-500 px-4 py-2 rounded">Saya Sudah Bayar</button>
+    <div id="status" class="mt-4 text-sm text-center"></div>
+
+    <p class="text-xs text-gray-400 mt-6">XO Music 2025</p>
+  </div>
 
   <script>
-    document.getElementById('submit').onclick = async () => {
-      const data = JSON.parse(sessionStorage.getItem("request"));
-      const nama = document.getElementById("nama").value || "Anonim";
-      const res = await fetch("/api/request", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...data, nama })
-      });
-      if (res.ok) {
-        alert("Request Anda berhasil masuk antrian 🎵");
-        window.location.href = "/live.html";
+    const data = JSON.parse(sessionStorage.getItem("request"));
+    const namaInput = document.getElementById("nama");
+    const kirimBtn = document.getElementById("kirimBtn");
+    const statusBox = document.getElementById("status");
+
+    if (!data || !data.title || !data.artist) {
+      statusBox.innerHTML = "<span class='text-red-400'>Data tidak ditemukan. Silakan ulangi dari halaman awal.</span>";
+      kirimBtn.disabled = true;
+    }
+
+    kirimBtn.addEventListener("click", async () => {
+      kirimBtn.disabled = true;
+      statusBox.innerHTML = "<span class='text-yellow-300'>⏳ Mengirim request...</span>";
+
+      try {
+        const res = await fetch("/api/request", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: data.title,
+            artist: data.artist,
+            nama: namaInput.value.trim() || "Anonim"
+          })
+        });
+
+        const result = await res.json();
+
+        if (result.success) {
+          statusBox.innerHTML = "<span class='text-green-400'>✅ Request kamu berhasil dikirim!</span>";
+        } else {
+          statusBox.innerHTML = "<span class='text-red-400'>❌ Gagal mengirim request.</span>";
+        }
+
+      } catch (e) {
+        console.error(e);
+        statusBox.innerHTML = "<span class='text-red-400'>🚫 Error saat mengirim data.</span>";
       }
-    };
+    });
   </script>
 </body>
 </html>
