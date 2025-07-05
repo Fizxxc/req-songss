@@ -13,73 +13,73 @@ const firebaseConfig = {
   measurementId: "G-6S5NHHLFW0"
 };
 
-// === Telegram (gunakan ENV untuk keamanan tetap) ===
+// === Telegram Configuration (ENV) ===
 const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
-// === Firebase Init ===
+// === Init Firebase ===
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// === Handler ===
 export default async function handler(req) {
-  try {
-    // Pastikan method POST
-    if (req.method !== "POST") {
-      return new Response(JSON.stringify({ error: "Method not allowed" }), {
-        status: 405,
-        headers: { "Content-Type": "application/json" }
-      });
-    }
-
-    // Ambil dan validasi body
-    const data = await req.json();
-
-    if (!data || !data.title || !data.artist) {
-      return new Response(JSON.stringify({ error: "Data tidak lengkap" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" }
-      });
-    }
-
-    // Simpan ke Firebase Realtime Database
-    await push(ref(db, "requests"), {
-      title: data.title,
-      artist: data.artist,
-      nama: data.nama || "Anonim",
-      status: "pending",
-      time: Date.now()
+  if (req.method !== "POST") {
+    return new Response(JSON.stringify({ error: "Method not allowed" }), {
+      status: 405
     });
+  }
 
-    // Kirim Notifikasi Telegram (jika tersedia)
+  let data;
+  try {
+    data = await req.json();
+  } catch (err) {
+    return new Response(JSON.stringify({ error: "Invalid JSON" }), {
+      status: 400
+    });
+  }
+
+  if (!data.title || !data.artist) {
+    return new Response(JSON.stringify({ error: "Data tidak lengkap." }), {
+      status: 400
+    });
+  }
+
+  const payload = {
+    title: data.title,
+    artist: data.artist,
+    nama: data.nama || "Anonim",
+    status: "pending",
+    time: Date.now()
+  };
+
+  try {
+    await push(ref(db, "requests"), payload);
+
+    // Kirim ke Telegram
     if (TELEGRAM_TOKEN && TELEGRAM_CHAT_ID) {
-      const message = `🎵 *Request Lagu Baru*\n\n🎶 *${data.title}*\n🎤 ${data.artist}\n👤 Pengirim: ${data.nama || "Anonim"}`;
-      try {
-        await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            chat_id: TELEGRAM_CHAT_ID,
-            text: message,
-            parse_mode: "Markdown"
-          })
-        });
-      } catch (err) {
-        console.error("❌ Telegram Error:", err.message);
-        // Telegram error tidak menghentikan proses utama
-      }
+      const message = `🎵 *Request Lagu Masuk*\n\n` +
+        `🎶 *${payload.title}* oleh *${payload.artist}*\n` +
+        `👤 Pengirim: ${payload.nama}\n` +
+        `🕒 ${new Date(payload.time).toLocaleString()}`;
+
+      await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: TELEGRAM_CHAT_ID,
+          text: message,
+          parse_mode: "Markdown"
+        })
+      });
     }
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
       headers: { "Content-Type": "application/json" }
     });
-
   } catch (error) {
-    console.error("❌ Internal Error:", error);
-    return new Response(JSON.stringify({ error: "Internal server error" }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" }
+    console.error("Gagal kirim ke Firebase atau Telegram:", error);
+    return new Response(JSON.stringify({ error: "Server error" }), {
+      status: 500
     });
   }
 }
