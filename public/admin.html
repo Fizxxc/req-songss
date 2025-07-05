@@ -2,34 +2,71 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>Admin Dashboard | XO Music</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Admin | XO Music</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script type="module" src="/firebase.js"></script>
 </head>
-<body class="bg-gray-900 text-white min-h-screen p-6">
+<body class="bg-gray-950 text-white min-h-screen p-6">
   <div class="max-w-3xl mx-auto">
-    <h1 class="text-3xl font-bold mb-4">📥 Permintaan Lagu</h1>
-    <div id="list" class="space-y-3"></div>
+    <h1 class="text-3xl font-extrabold mb-6 text-center">📥 Permintaan Lagu</h1>
+    <div id="list" class="space-y-4"></div>
   </div>
 
   <script type="module">
-    import { ref, onChildAdded } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
+    import {
+      ref,
+      onChildAdded,
+      update,
+      getDatabase
+    } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
 
     const db = window.firebaseDB;
     const list = document.getElementById("list");
 
-    onChildAdded(ref(db, "requests"), snapshot => {
+    const formatTime = (timestamp) =>
+      new Date(timestamp).toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" });
+
+    onChildAdded(ref(db, "requests"), (snapshot) => {
       const data = snapshot.val();
+      const key = snapshot.key;
+
       const div = document.createElement("div");
-      div.className = "bg-white bg-opacity-10 backdrop-blur p-4 rounded shadow";
+      div.className = "bg-white bg-opacity-10 p-4 rounded-xl backdrop-blur-lg shadow-lg";
+
+      const statusColor = data.status === "done" ? "text-green-400" : "text-yellow-300";
+
       div.innerHTML = `
-        <p><strong>🎵 Lagu:</strong> ${data.title} - ${data.artist}</p>
-        <p><strong>👤 Oleh:</strong> ${data.nama}</p>
-        <p class="text-sm text-gray-300">🕒 ${new Date(data.time).toLocaleString()}</p>
-        <p class="text-sm text-yellow-400">Status: ${data.status}</p>
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <p class="text-xl font-semibold">🎵 ${data.title}</p>
+            <p class="text-sm text-gray-300 mb-1">👤 ${data.nama} — ${formatTime(data.time)}</p>
+            <p class="text-sm ${statusColor}">Status: ${data.status.toUpperCase()}</p>
+            ${data.preview_url ? `
+              <audio controls class="mt-2 w-full max-w-sm">
+                <source src="${data.preview_url}" type="audio/mpeg" />
+              </audio>
+            ` : `<p class="text-xs text-gray-400">🔇 Tidak ada preview.</p>`}
+          </div>
+          <div class="flex gap-2">
+            ${data.status !== "done" ? `
+              <button data-id="${key}" class="mark-done bg-green-500 hover:bg-green-600 px-3 py-1 rounded text-sm font-bold">Tandai Selesai</button>
+            ` : ""}
+          </div>
+        </div>
       `;
+
       list.prepend(div);
+
+      const markBtn = div.querySelector(".mark-done");
+      if (markBtn) {
+        markBtn.addEventListener("click", async () => {
+          await update(ref(db, "requests/" + key), { status: "done" });
+          markBtn.remove(); // hapus tombol setelah diupdate
+          div.querySelector("p.text-sm.text-yellow-300").textContent = "Status: DONE";
+          div.querySelector("p.text-sm.text-yellow-300").className = "text-sm text-green-400";
+        });
+      }
     });
   </script>
 </body>
